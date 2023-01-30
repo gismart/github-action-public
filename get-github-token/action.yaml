@@ -1,0 +1,31 @@
+---
+name: "Get GitHub PAM token"
+description: "Get GitHub PAM token from SSM"
+inputs:
+  aws-region-name:
+    description: "AWS region where located SSM parameter"
+    default: eu-west-1
+    required: false
+  ssm-path:
+    description: "Path for AWS SSM parameter"
+    default: "/ci/DEVOPS_ACCESS_TOKEN_GITHUB"
+    required: false
+outputs:
+  token:
+    description: "GitHub PAM token"
+    value: ${{ steps.token.outputs.token}}
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: ${{ inputs.aws-region-name }}
+        role-duration-seconds: 1200
+    - name: Get GitHub token from ssm
+      id: token
+      run: |
+        token=$(aws ssm get-parameter --name "${{ inputs.ssm-path }}" --with-decryption | jq .Parameter.Value -r)
+        echo token="$token" >> $GITHUB_OUTPUT
+      shell: bash
+
